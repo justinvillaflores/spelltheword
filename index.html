@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spell This Game</title>
+  <style>
+    /* Basic reset */
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 10px;
+      color: #333;
+    }
+
+    #game-container {
+      text-align: center;
+      padding: 20px;
+      border-radius: 10px;
+      background-color: #ffffff;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      max-width: 400px;
+      width: 100%;
+    }
+
+    h1 {
+      margin-bottom: 15px;
+      font-size: 2em;
+      color: #444;
+    }
+
+    #word-prompt {
+      font-size: 1.3em;
+      margin-bottom: 20px;
+    }
+
+    #choices {
+      margin-bottom: 20px;
+      font-size: 1em;
+      color: #555;
+    }
+
+    #input-container {
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    #user-input {
+      padding: 10px;
+      font-size: 1em;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      text-align: center;
+      flex: 1 1 150px;
+      min-width: 120px;
+    }
+
+    #enter-btn {
+      padding: 10px 15px;
+      font-size: 1em;
+      border-radius: 5px;
+      border: none;
+      background-color: #4caf50;
+      color: white;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s;
+    }
+
+    #enter-btn:hover {
+      background-color: #45a049;
+      transform: scale(1.05);
+    }
+
+    #keyboard {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .key {
+      padding: 10px 15px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      background-color: #f0f0f0;
+      cursor: pointer;
+      font-size: 1em;
+      transition: background 0.2s, transform 0.1s;
+      min-width: 40px;
+      text-align: center;
+    }
+
+    .key:hover {
+      background-color: #e0e0e0;
+      transform: translateY(-2px);
+    }
+
+    /* Video fullscreen overlay */
+    #video-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: black;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    #video-overlay video {
+      width: 90%;
+      max-width: 800px;
+      height: auto;
+      border-radius: 5px;
+    }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 1.5em;
+      }
+      #word-prompt, #choices {
+        font-size: 1.1em;
+      }
+      #user-input, .key, #enter-btn {
+        font-size: 0.9em;
+        padding: 8px 10px;
+      }
+      .key {
+        min-width: 35px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="game-container">
+    <h1>Spell This</h1>
+    <div id="word-prompt">Spell the word:</div>
+
+    <div id="choices">
+      Choices: 
+      <strong>1. matutulog</strong>, 
+      <strong>2. goodnight</strong>, 
+      <strong>3. hindi</strong>
+    </div>
+    
+    <div id="input-container">
+      <input type="text" id="user-input" placeholder="Type here..." autofocus>
+      <button id="enter-btn">Enter</button>
+    </div>
+
+    <div id="keyboard">
+      <!-- Keyboard letters will be generated here -->
+    </div>
+  </div>
+
+  <div id="video-overlay">
+    <video id="video" autoplay></video>
+  </div>
+
+  <script>
+    const choices = {
+      "matutulog": "matutulog.mp4",
+      "goodnight": "goodnight.mp4",
+      "hindi": "hindi.mp4"
+    };
+
+    const userInput = document.getElementById("user-input");
+    const enterBtn = document.getElementById("enter-btn");
+    const keyboardDiv = document.getElementById("keyboard");
+    const videoOverlay = document.getElementById("video-overlay");
+    const video = document.getElementById("video");
+
+    // Generate on-screen keyboard (letters a-z)
+    const letters = "abcdefghijklmnopqrstuvwxyz";
+    letters.split("").forEach(letter => {
+      const btn = document.createElement("button");
+      btn.textContent = letter;
+      btn.classList.add("key");
+      btn.addEventListener("click", () => {
+        userInput.value += letter;
+        userInput.focus();
+      });
+      keyboardDiv.appendChild(btn);
+    });
+
+    // Play the video for the correct word
+    function playVideo(word) {
+      if (choices[word]) {
+        video.src = choices[word];
+        video.currentTime = 0;
+        videoOverlay.style.display = "flex";
+        video.play();
+        document.body.style.backgroundColor = "black";
+        document.getElementById("game-container").style.display = "none";
+      }
+    }
+
+    // Reset game after video ends
+    function resetGame() {
+      videoOverlay.style.display = "none";
+      document.body.style.backgroundColor = "";
+      document.getElementById("game-container").style.display = "block";
+      userInput.value = "";
+      userInput.focus();
+    }
+
+    // Check spelling
+    function checkSpelling() {
+      const word = userInput.value.toLowerCase();
+      if (choices[word]) {
+        playVideo(word);
+      } else {
+        alert("Incorrect! Try again.");
+        userInput.value = "";
+        userInput.focus();
+      }
+    }
+
+    // Enter button click
+    enterBtn.addEventListener("click", checkSpelling);
+
+    // Enter key press
+    userInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        checkSpelling();
+      }
+    });
+
+    // When video ends, reset game
+    video.addEventListener("ended", resetGame);
+  </script>
+</body>
+</html>
