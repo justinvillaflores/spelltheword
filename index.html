@@ -3,248 +3,321 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Spell This Game</title>
+  <title>3D Dice Spelling Game</title>
+
   <style>
-    /* Basic reset */
-    * {
-      box-sizing: border-box;
-    }
+    /* BASE STYLES */
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background-color: #f5f5f5;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background-color: #70c1b3; 
       display: flex;
-      flex-direction: column;
-      align-items: center;
       justify-content: center;
+      align-items: center;
       min-height: 100vh;
-      padding: 10px;
-      color: #333;
+      overflow-x: hidden;
     }
 
     #game-container {
       text-align: center;
-      padding: 20px;
-      border-radius: 10px;
+      padding: 30px;
+      border-radius: 20px;
       background-color: #ffffff;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      max-width: 400px;
-      width: 100%;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      max-width: 500px;
+      width: 95%;
+      position: relative;
     }
 
-    h1 {
-      margin-bottom: 15px;
-      font-size: 2em;
-      color: #444;
+    h1 { color: #333; margin: 0; font-size: 24px; }
+    p { color: #666; margin-bottom: 10px; }
+
+    /* 3D DICE STYLES */
+    .dice-wrapper {
+      width: 100px;
+      height: 100px;
+      margin: 40px auto;
+      perspective: 600px;
+      cursor: pointer;
     }
 
-    #word-prompt {
-      font-size: 1.3em;
+    .dice {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      transform-style: preserve-3d;
+      transition: transform 1s ease-out;
+    }
+
+    .side {
+      position: absolute;
+      background-color: #fff;
+      border-radius: 10px;
+      width: 100px;
+      height: 100px;
+      border: 2px solid #e5e5e5;
+      line-height: 2em;
+    }
+
+    .dot {
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      margin: -9px 0 0 -9px;
+      border-radius: 50%;
+      background-color: #f25f5c;
+      box-shadow: inset 2px 2px #d90429;
+    }
+
+    /* Side Positions */
+    .side:nth-child(1) { transform: translateZ(50px); }
+    .side:nth-child(2) { transform: rotateY(-180deg) translateZ(50px); }
+    .side:nth-child(3) { transform: rotateY(-90deg) translateZ(50px); }
+    .side:nth-child(4) { transform: rotateY(90deg) translateZ(50px); }
+    .side:nth-child(5) { transform: rotateX(90deg) translateZ(50px); }
+    .side:nth-child(6) { transform: rotateX(-90deg) translateZ(50px); }
+
+    /* Dice Faces Classes */
+    .show-1 { transform: rotateX(720deg) rotateZ(-720deg); }
+    .show-2 { transform: rotateX(450deg) rotateZ(-720deg); }
+    .show-3 { transform: rotateY(-450deg) rotateZ(-1440deg); }
+    .show-4 { transform: rotateY(810deg) rotateZ(720deg); }
+    .show-5 { transform: rotateX(-810deg) rotateZ(-1080deg); }
+    .show-6 { transform: rotateX(-900deg) rotateZ(1080deg); }
+
+    /* Dot Placements */
+    .one-1, .three-2, .five-5 { top: 50%; left: 50%; }
+    .two-1, .three-1, .four-1, .five-1, .six-1 { top: 20%; left: 20%; }
+    .two-2, .three-3, .four-4, .five-4, .six-6 { top: 80%; left: 80%; }
+    .four-3, .five-3, .six-4 { top: 20%; left: 80%; }
+    .four-2, .five-2, .six-3 { top: 80%; left: 20%; }
+    .six-2 { top: 50%; left: 20%; }
+    .six-5 { top: 50%; left: 80%; }
+
+    /* GAME UI */
+    #target-word-display {
+      font-size: 2.2em;
+      font-weight: bold;
+      color: #2196f3;
       margin-bottom: 20px;
-    }
-
-    #choices {
-      margin-bottom: 20px;
-      font-size: 1em;
-      color: #555;
+      min-height: 50px;
+      /* TINAWAGAN: Tinanggal ang uppercase para maging small letters lang */
+      text-transform: none; 
+      letter-spacing: 2px;
     }
 
     #input-container {
-      margin-bottom: 20px;
       display: flex;
-      justify-content: center;
       gap: 10px;
-      flex-wrap: wrap;
+      margin-bottom: 20px;
     }
 
     #user-input {
-      padding: 10px;
-      font-size: 1em;
-      border-radius: 5px;
-      border: 1px solid #ccc;
+      flex: 1;
+      padding: 12px;
+      font-size: 1.1em;
+      border: 2px solid #ddd;
+      border-radius: 10px;
       text-align: center;
-      flex: 1 1 150px;
-      min-width: 120px;
+      outline: none;
     }
 
     #enter-btn {
-      padding: 10px 15px;
-      font-size: 1em;
-      border-radius: 5px;
+      padding: 10px 25px;
+      background-color: #f4d35e; 
+      color: #333;
       border: none;
-      background-color: #4caf50;
-      color: white;
+      border-radius: 10px;
       cursor: pointer;
-      transition: background 0.2s, transform 0.2s;
+      font-weight: bold;
+      box-shadow: 0 4px #50514F;
     }
 
-    #enter-btn:hover {
-      background-color: #45a049;
-      transform: scale(1.05);
+    #enter-btn:active {
+      box-shadow: 0 0px #50514F;
+      transform: translateY(4px);
     }
 
+    /* KEYBOARD */
     #keyboard {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 8px;
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
     }
 
     .key {
-      padding: 10px 15px;
-      border-radius: 5px;
+      padding: 12px 5px;
+      background: #f0f0f0;
       border: 1px solid #ccc;
-      background-color: #f0f0f0;
+      border-radius: 8px;
       cursor: pointer;
-      font-size: 1em;
-      transition: background 0.2s, transform 0.1s;
-      min-width: 40px;
-      text-align: center;
+      font-weight: bold;
+      transition: 0.2s;
     }
 
-    .key:hover {
-      background-color: #e0e0e0;
-      transform: translateY(-2px);
-    }
+    .key:active { background: #ddd; }
+    .key.delete { grid-column: span 2; background: #ffcdd2; }
 
-    /* Video fullscreen overlay */
+    /* VIDEO OVERLAY */
     #video-overlay {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: black;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: black;
       display: none;
       align-items: center;
       justify-content: center;
-      z-index: 1000;
+      z-index: 2000;
     }
 
-    #video-overlay video {
-      width: 90%;
-      max-width: 800px;
-      height: auto;
-      border-radius: 5px;
-    }
-
-    /* Responsive */
-    @media (max-width: 480px) {
-      h1 {
-        font-size: 1.5em;
-      }
-      #word-prompt, #choices {
-        font-size: 1.1em;
-      }
-      #user-input, .key, #enter-btn {
-        font-size: 0.9em;
-        padding: 8px 10px;
-      }
-      .key {
-        min-width: 35px;
-      }
-    }
+    video { width: 95%; max-width: 800px; }
   </style>
 </head>
 <body>
 
-  <div id="game-container">
-    <h1>Spell This</h1>
-    <div id="word-prompt">Spell the word:</div>
+<div id="game-container">
+  <h1>Spell This!</h1>
+  <p>Tap the dice to roll</p>
 
-    <div id="choices">
-      Choices: 
-      <strong>1. matutulog</strong>, 
-      <strong>2. goodnight</strong>, 
-      <strong>3. hindi</strong>
+  <div class="dice-wrapper" onclick="rollDice()">
+    <div id="dice" class="dice">
+      <div class="side one"><div class="dot one-1"></div></div>
+      <div class="side two"><div class="dot two-1"></div><div class="dot two-2"></div></div>
+      <div class="side three"><div class="dot three-1"></div><div class="dot three-2"></div><div class="dot three-3"></div></div>
+      <div class="side four"><div class="dot four-1"></div><div class="dot four-2"></div><div class="dot four-3"></div><div class="dot four-4"></div></div>
+      <div class="side five"><div class="dot five-1"></div><div class="dot five-2"></div><div class="dot five-3"></div><div class="dot five-4"></div><div class="dot five-5"></div></div>
+      <div class="side six"><div class="dot six-1"></div><div class="dot six-2"></div><div class="dot six-3"></div><div class="dot six-4"></div><div class="dot six-5"></div><div class="dot six-6"></div></div>
     </div>
+  </div>
+
+  <div id="target-word-display">? ? ?</div>
+
+  <div id="input-container">
+    <input type="text" id="user-input" placeholder="type here..." readonly>
+    <button id="enter-btn" onclick="checkSpelling()">ENTER</button>
+  </div>
+
+  <div id="keyboard"></div>
+</div>
+
+<div id="video-overlay">
+  <video id="video" controls></video>
+</div>
+
+<script>
+  const wordList = [
+    "matutulog", "goodnight", "hindi", "mamatay", "maghuhulog", 
+    "malaki", "alipin", "never", "benben", "nililibang"
+  ];
+
+  const videoFiles = {
+    "matutulog": "matutulog.mp4",
+    "goodnight": "goodnight.mp4",
+    "hindi": "hindi.mp4",
+    "mamatay": "mam4tay.mp4",
+    "maghuhulog": "maghuhulog.mp4",
+    "malaki": "malaki.mp4",
+    "alipin": "alipin.mp4",
+    "never": "never.mp4",
+    "benben": "benben.mp4",
+    "nililibang": "nililibang.mp4"
+  };
+
+  let currentTargetWord = "";
+  let isRolling = false;
+
+  const elDice = document.getElementById('dice');
+  const wordDisplay = document.getElementById("target-word-display");
+  const userInput = document.getElementById("user-input");
+  const videoOverlay = document.getElementById("video-overlay");
+  const video = document.getElementById("video");
+
+  function rollDice() {
+    if (isRolling) return;
     
-    <div id="input-container">
-      <input type="text" id="user-input" placeholder="Type here..." autofocus>
-      <button id="enter-btn">Enter</button>
-    </div>
+    isRolling = true;
+    userInput.value = "";
+    wordDisplay.textContent = "...";
 
-    <div id="keyboard">
-      <!-- Keyboard letters will be generated here -->
-    </div>
-  </div>
+    const diceSide = Math.floor(Math.random() * 6) + 1;
 
-  <div id="video-overlay">
-    <video id="video" autoplay></video>
-  </div>
+    for (let i = 1; i <= 6; i++) {
+      elDice.classList.remove('show-' + i);
+    }
+    
+    setTimeout(() => {
+      elDice.classList.add('show-' + diceSide);
+    }, 10);
 
-  <script>
-    const choices = {
-      "matutulog": "matutulog.mp4",
-      "goodnight": "goodnight.mp4",
-      "hindi": "hindi.mp4"
-    };
+    setTimeout(() => {
+      const randomIndex = Math.floor(Math.random() * wordList.length);
+      // Small letters na ang kukunin dito
+      currentTargetWord = wordList[randomIndex].toLowerCase(); 
+      wordDisplay.textContent = currentTargetWord;
+      isRolling = false;
+    }, 1000); 
+  }
 
-    const userInput = document.getElementById("user-input");
-    const enterBtn = document.getElementById("enter-btn");
-    const keyboardDiv = document.getElementById("keyboard");
-    const videoOverlay = document.getElementById("video-overlay");
-    const video = document.getElementById("video");
-
-    // Generate on-screen keyboard (letters a-z)
-    const letters = "abcdefghijklmnopqrstuvwxyz";
-    letters.split("").forEach(letter => {
-      const btn = document.createElement("button");
-      btn.textContent = letter;
-      btn.classList.add("key");
-      btn.addEventListener("click", () => {
-        userInput.value += letter;
-        userInput.focus();
-      });
-      keyboardDiv.appendChild(btn);
-    });
-
-    // Play the video for the correct word
-    function playVideo(word) {
-      if (choices[word]) {
-        video.src = choices[word];
-        video.currentTime = 0;
-        videoOverlay.style.display = "flex";
-        video.play();
-        document.body.style.backgroundColor = "black";
-        document.getElementById("game-container").style.display = "none";
-      }
+  function checkSpelling() {
+    // Ginawang toLowerCase() para laging small letters ang iccheck
+    const typedValue = userInput.value.toLowerCase().trim();
+    
+    if (!currentTargetWord) {
+      alert("Roll the dice first!");
+      return;
     }
 
-    // Reset game after video ends
-    function resetGame() {
-      videoOverlay.style.display = "none";
-      document.body.style.backgroundColor = "";
-      document.getElementById("game-container").style.display = "block";
+    if (typedValue === currentTargetWord) {
+      playVideo(currentTargetWord);
+    } else {
+      alert("Wrong spelling! Try again.");
       userInput.value = "";
-      userInput.focus();
     }
+  }
 
-    // Check spelling
-    function checkSpelling() {
-      const word = userInput.value.toLowerCase();
-      if (choices[word]) {
-        playVideo(word);
-      } else {
-        alert("Incorrect! Try again.");
-        userInput.value = "";
-        userInput.focus();
-      }
+  function playVideo(word) {
+    if (videoFiles[word]) {
+      video.src = videoFiles[word];
+      videoOverlay.style.display = "flex";
+      video.play();
+      document.getElementById("game-container").style.visibility = "hidden";
     }
+  }
 
-    // Enter button click
-    enterBtn.addEventListener("click", checkSpelling);
+  // KEYBOARD GENERATION
+  const letters = "abcdefghijklmnopqrstuvwxyz";
+  const keyboard = document.getElementById("keyboard");
 
-    // Enter key press
-    userInput.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") {
-        checkSpelling();
-      }
-    });
+  letters.split("").forEach(char => {
+    const btn = document.createElement("button");
+    btn.textContent = char;
+    btn.className = "key";
+    btn.onclick = () => {
+      if(!isRolling) userInput.value += char;
+    };
+    keyboard.appendChild(btn);
+  });
 
-    // When video ends, reset game
-    video.addEventListener("ended", resetGame);
-  </script>
+  const delBtn = document.createElement("button");
+  delBtn.textContent = "DEL";
+  delBtn.className = "key delete";
+  delBtn.onclick = () => userInput.value = userInput.value.slice(0, -1);
+  keyboard.appendChild(delBtn);
+
+  video.onended = () => {
+    videoOverlay.style.display = "none";
+    document.getElementById("game-container").style.visibility = "visible";
+    wordDisplay.textContent = "? ? ?";
+    currentTargetWord = "";
+    userInput.value = "";
+  };
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") checkSpelling();
+  });
+</script>
+
 </body>
 </html>
