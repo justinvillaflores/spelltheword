@@ -103,7 +103,6 @@
       color: #2196f3;
       margin-bottom: 20px;
       min-height: 50px;
-      /* TINAWAGAN: Tinanggal ang uppercase para maging small letters lang */
       text-transform: none; 
       letter-spacing: 2px;
     }
@@ -145,6 +144,7 @@
       display: grid;
       grid-template-columns: repeat(7, 1fr);
       gap: 6px;
+      margin-bottom: 15px;
     }
 
     .key {
@@ -160,6 +160,15 @@
     .key:active { background: #ddd; }
     .key.delete { grid-column: span 2; background: #ffcdd2; }
 
+    /* WATERMARK */
+    .watermark {
+      font-size: 14px;
+      color: #bbb;
+      font-weight: bold;
+      margin-top: 10px;
+      letter-spacing: 1px;
+    }
+
     /* VIDEO OVERLAY */
     #video-overlay {
       position: fixed;
@@ -170,9 +179,16 @@
       align-items: center;
       justify-content: center;
       z-index: 2000;
+      /* Force non-interactive during playback */
+      pointer-events: auto; 
     }
 
-    video { width: 95%; max-width: 800px; }
+    /* Tinanggal ang pointer events para hindi ma-click/pause ang video */
+    video { 
+      width: 100%; 
+      max-width: 800px; 
+      pointer-events: none; 
+    }
   </style>
 </head>
 <body>
@@ -195,15 +211,17 @@
   <div id="target-word-display">? ? ?</div>
 
   <div id="input-container">
-    <input type="text" id="user-input" placeholder="type here..." readonly>
+    <input type="text" id="user-input" placeholder="type here..." autocomplete="off">
     <button id="enter-btn" onclick="checkSpelling()">ENTER</button>
   </div>
 
   <div id="keyboard"></div>
+
+  <div class="watermark">jstnDev</div>
 </div>
 
 <div id="video-overlay">
-  <video id="video" controls></video>
+  <video id="video" playsinline></video>
 </div>
 
 <script>
@@ -227,6 +245,7 @@
 
   let currentTargetWord = "";
   let isRolling = false;
+  let isPlayingVideo = false;
 
   const elDice = document.getElementById('dice');
   const wordDisplay = document.getElementById("target-word-display");
@@ -235,7 +254,7 @@
   const video = document.getElementById("video");
 
   function rollDice() {
-    if (isRolling) return;
+    if (isRolling || isPlayingVideo) return;
     
     isRolling = true;
     userInput.value = "";
@@ -253,15 +272,14 @@
 
     setTimeout(() => {
       const randomIndex = Math.floor(Math.random() * wordList.length);
-      // Small letters na ang kukunin dito
       currentTargetWord = wordList[randomIndex].toLowerCase(); 
       wordDisplay.textContent = currentTargetWord;
       isRolling = false;
+      userInput.focus(); // Auto-focus para sa keyboard
     }, 1000); 
   }
 
   function checkSpelling() {
-    // Ginawang toLowerCase() para laging small letters ang iccheck
     const typedValue = userInput.value.toLowerCase().trim();
     
     if (!currentTargetWord) {
@@ -279,14 +297,22 @@
 
   function playVideo(word) {
     if (videoFiles[word]) {
+      isPlayingVideo = true;
       video.src = videoFiles[word];
       videoOverlay.style.display = "flex";
-      video.play();
+      
+      // I-disable ang pakikipag-ugnayan habang video
+      document.body.style.overflow = "hidden"; 
+      
+      video.play().catch(error => {
+        console.log("Autoplay blocked or error:", error);
+      });
+
       document.getElementById("game-container").style.visibility = "hidden";
     }
   }
 
-  // KEYBOARD GENERATION
+  // Keyboard Click Logic (Screen Keyboard)
   const letters = "abcdefghijklmnopqrstuvwxyz";
   const keyboard = document.getElementById("keyboard");
 
@@ -294,8 +320,12 @@
     const btn = document.createElement("button");
     btn.textContent = char;
     btn.className = "key";
+    btn.type = "button";
     btn.onclick = () => {
-      if(!isRolling) userInput.value += char;
+      if(!isRolling && !isPlayingVideo) {
+        userInput.value += char;
+        userInput.focus();
+      }
     };
     keyboard.appendChild(btn);
   });
@@ -303,19 +333,36 @@
   const delBtn = document.createElement("button");
   delBtn.textContent = "DEL";
   delBtn.className = "key delete";
-  delBtn.onclick = () => userInput.value = userInput.value.slice(0, -1);
+  delBtn.type = "button";
+  delBtn.onclick = () => {
+    userInput.value = userInput.value.slice(0, -1);
+    userInput.focus();
+  };
   keyboard.appendChild(delBtn);
 
+  // Video Ended Reset
   video.onended = () => {
+    isPlayingVideo = false;
     videoOverlay.style.display = "none";
     document.getElementById("game-container").style.visibility = "visible";
+    document.body.style.overflow = "auto";
     wordDisplay.textContent = "? ? ?";
     currentTargetWord = "";
     userInput.value = "";
   };
 
+  // Physical Keyboard Support (Laptop/CP)
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") checkSpelling();
+    if (e.key === "Enter") {
+      checkSpelling();
+    }
+  });
+
+  // Iwasan ang pag-pause gamit ang spacebar habang nasa overlay
+  window.addEventListener("keydown", function(e) {
+    if(isPlayingVideo && e.code === "Space") {
+        e.preventDefault();
+    }
   });
 </script>
 
